@@ -1,6 +1,8 @@
 # svg2curv
 Translate svg drawings to curv code.
 
+![Rendering of Curv](./images/curv.png)
+
 The main use-case I had in mind when creating this was for adding logos or
 designs to my curv models. It's also great for tracing out gears or other
 measurement sensitive models and being extruded.
