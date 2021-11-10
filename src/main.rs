@@ -1,6 +1,6 @@
 extern crate xml;
 
-use std::fs::File;
+use std::fs::{ self, File };
 use std::io::BufReader;
 
 use xml::reader::{EventReader, XmlEvent};
@@ -11,10 +11,28 @@ struct Position {
   y: f64,
 }
 
+impl Default for Position {
+  fn default() -> Self {
+    Position {
+      x: 0.0,
+      y: 0.0,
+    }
+  }
+}
+
 #[derive(Clone, Copy, Debug)]
 struct Circle {
   position: Position,
   radius: f64,
+}
+
+impl Default for Circle {
+  fn default() -> Self {
+    Circle {
+      position: Position::default(),
+      radius: 0.0,
+    }
+  }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -22,6 +40,16 @@ struct Ellipse {
   position: Position,
   radius_x: f64,
   radius_y: f64,
+}
+
+impl Default for Ellipse {
+  fn default() -> Self {
+    Ellipse {
+      position: Position::default(),
+      radius_x: 0.0,
+      radius_y: 0.0,
+    }
+  }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -102,7 +130,7 @@ impl PathState {
           println!(
             "  [[{}, {}]], // MoveAbsolute",
             self.current_point.x,
-            self.current_point.y,
+            -self.current_point.y,
           );
         }
       },
@@ -114,7 +142,7 @@ impl PathState {
           println!(
             "  [[{}, {}]], // MoveRelative",
             self.current_point.x,
-            self.current_point.y,
+            -self.current_point.y,
           );
         }
       },
@@ -128,21 +156,45 @@ impl PathState {
       Command::QuadraticBezierRelative => { },
       Command::QuadraticBezierSmoothAbsolute => { },
       Command::QuadraticBezierSmoothRelative => { },
-      Command::CubicBezierAbsolute => { },
-      Command::CubicBezierRelative => {
+      Command::CubicBezierAbsolute => {
         for args in self.values.chunks(6) {
           println!(
-            "  bezier4 [[{}, {}], [{}, {}], [{}, {}]] 1.0, // CubicBezierRelative",
-            self.current_point.x + args[0],
-            self.current_point.y + args[1],
-            self.current_point.x + args[2],
-            self.current_point.y + args[3],
-            self.current_point.x + args[4],
-            self.current_point.y + args[5],
+            "  bezier4 [[{}, {}], [{}, {}], [{}, {}], [{}, {}]] 0.2, // CubicBezierAbsolute",
+            self.current_point.x,
+            -self.current_point.y,
+            args[0],
+            -args[1],
+            args[2],
+            -args[3],
+            args[4],
+            -args[5],
           );
 
-          self.current_point.x += self.values[4];
-          self.current_point.y += self.values[5];
+          self.current_point.x = args[4];
+          self.current_point.y = args[5];
+        }
+      },
+      Command::CubicBezierRelative => {
+        for args in self.values.chunks(6) {
+          if args.len() != 6 {
+            // Should never happen but does because of how other software exports SVGs.
+            return;
+          }
+          
+          println!(
+            "  bezier4 [[{}, {}], [{}, {}], [{}, {}], [{}, {}]] 0.2, // CubicBezierRelative",
+            self.current_point.x,
+            -self.current_point.y,
+            self.current_point.x + args[0],
+            -(self.current_point.y + args[1]),
+            self.current_point.x + args[2],
+            -(self.current_point.y + args[3]),
+            self.current_point.x + args[4],
+            -(self.current_point.y + args[5]),
+          );
+
+          self.current_point.x += args[4];
+          self.current_point.y += args[5];
         }
       },
       Command::CubicBezierSmoothAbsolute => { },
@@ -171,14 +223,15 @@ impl Default for PathState {
 }
 
 fn main() {
-  let extraCurv = fs::read_to_string("extra.curv").unwrap();
+  let extra_curv = fs::read_to_string("extra.curv").unwrap();
   
-  let drawingSvg = File::open("drawing.svg").unwrap();
-  let drawingSvg = BufReader::new(drawingSvg);
-  let parser = EventReader::new(drawingSvg);
+  let drawing_svg = File::open("drawing.svg").unwrap();
+  let drawing_svg = BufReader::new(drawing_svg);
+  let parser = EventReader::new(drawing_svg);
 
-  println!("{}", extraCurv);
-
+  println!("let");
+  println!("{}", extra_curv);
+  println!("in");
   println!("polygon << concat [");
   
   for e in parser {
@@ -280,6 +333,15 @@ fn main() {
                       }
                       
                     } // for
+
+                    // It's possible we stopped without processing the last command
+                    // because some programs generate without Z or z command.
+                    // We know this if there is still data in the value buffer.
+                    // Pushing a fake Z or z command will resolve the issue.
+                    if state.value_buffer.len() > 0 {
+                      state.push_value();
+                      state.push_command(Command::StopAbsolute);
+                    }
                   },
                   _ => {}
                 }
