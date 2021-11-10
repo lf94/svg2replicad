@@ -1,5 +1,6 @@
 extern crate xml;
 
+use std::env;
 use std::fs::{ self, File };
 use std::io::BufReader;
 
@@ -224,8 +225,9 @@ impl Default for PathState {
 
 fn main() {
   let extra_curv = fs::read_to_string("extra.curv").unwrap();
-  
-  let drawing_svg = File::open("drawing.svg").unwrap();
+
+  let args: Vec<String> = env::args().collect();
+  let drawing_svg = File::open(args[1].clone()).unwrap();
   let drawing_svg = BufReader::new(drawing_svg);
   let parser = EventReader::new(drawing_svg);
 
