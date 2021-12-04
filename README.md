@@ -15,6 +15,16 @@ You may decide that the output is good enough and automate this process by
 redirecting the output to a file and then using
 `include file "output_from_svg2curv.curv";` in your curv source code.
 
+## Refinement
+
+For letters or shapes with holes in them you will have to run this twice to
+generate two layers of shapes: the first layer, and the second layer which is
+used to cut into the first.
+
+If you are having weird aspect issues, please try using the "Apply Transforms"
+Inkscape extension. If the issues continue, select the path and go to Path
+→ Simplify.
+
 ## Planned supported elements and attributes
 
 It turns out Inkscape doesn't care much for anything other than Mm and Cc path
@@ -25,7 +35,7 @@ I will be adding them as I need them.
 
 * [x] circle cx cy r
 * [x] ellipse cx cy rx ry
-* [x] path Mm(LlHhVv)Cc(SsQqTtAa)Zz (Parens = not supported)
+* [x] path MmLlHhVvCc(Ss)Qq(TtAa)Zz (Parens = not supported)
 * [ ] polygon
 * [ ] rect
 

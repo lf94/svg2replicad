@@ -147,14 +147,111 @@ impl PathState {
           );
         }
       },
-      Command::LineAbsolute => { },
-      Command::LineRelative => { },
-      Command::HorizontalLineAbsolute => { },
-      Command::HorizontalLineRelative => { },
-      Command::VerticalLineAbsolute => { },
-      Command::VerticalLineRelative => { },
-      Command::QuadraticBezierAbsolute => { },
-      Command::QuadraticBezierRelative => { },
+      Command::LineAbsolute => {
+        for args in self.values.chunks(2) {
+          self.current_point.x = args[0];
+          self.current_point.y = args[1];
+          
+          println!(
+            "  [[{}, {}]], // LineAbsolute",
+            self.current_point.x,
+            -self.current_point.y,
+          );
+        }
+      },
+      Command::LineRelative => {
+        for args in self.values.chunks(2) {
+          self.current_point.x += args[0];
+          self.current_point.y += args[1];
+          
+          println!(
+            "  [[{}, {}]], // LineRelative",
+            self.current_point.x,
+            -self.current_point.y,
+          );
+        }
+      },
+      Command::HorizontalLineAbsolute => {
+        for args in self.values.chunks(2) {
+          self.current_point.x = args[0];
+          
+          println!(
+            "  [[{}, {}]], // HorizontalLineAbsolute",
+            self.current_point.x,
+            -self.current_point.y,
+          );
+        }
+      },
+      Command::HorizontalLineRelative => {
+        for args in self.values.chunks(2) {
+          self.current_point.x += args[0];
+          
+          println!(
+            "  [[{}, {}]], // HorizontalLineRelative",
+            self.current_point.x,
+            -self.current_point.y,
+          );
+        }
+      },
+      Command::VerticalLineAbsolute => {
+        for args in self.values.chunks(2) {
+          self.current_point.y = args[0];
+          
+          println!(
+            "  [[{}, {}]], // VerticalLineAbsolute",
+            self.current_point.x,
+            -self.current_point.y,
+          );
+        }
+      },
+      Command::VerticalLineRelative => {
+        for args in self.values.chunks(2) {
+          self.current_point.y += args[0];
+          
+          println!(
+            "  [[{}, {}]], // VerticalLineRelative",
+            self.current_point.x,
+            -self.current_point.y,
+          );
+        }
+      },
+      Command::QuadraticBezierAbsolute => {
+        for args in self.values.chunks(4) {
+          println!(
+            "  bezier3 [[{}, {}], [{}, {}], [{}, {}]] 0.2, // QuadraticBezierAbsolute",
+            self.current_point.x,
+            -self.current_point.y,
+            args[0],
+            -args[1],
+            args[2],
+            -args[3],
+          );
+
+          self.current_point.x = args[2];
+          self.current_point.y = args[3];
+        }
+      },
+      Command::QuadraticBezierRelative => {
+        for args in self.values.chunks(4) {
+          if args.len() != 4 {
+            // Should never happen but does because of how other software exports SVGs.
+            return;
+          }
+          
+          println!(
+            "  bezier3 [[{}, {}], [{}, {}], [{}, {}]] 0.2, // QuadraticBezierRelative",
+            self.current_point.x,
+            -self.current_point.y,
+            self.current_point.x + args[0],
+            -(self.current_point.y + args[1]),
+            self.current_point.x + args[2],
+            -(self.current_point.y + args[3]),
+          );
+
+          self.current_point.x += args[2];
+          self.current_point.y += args[3];
+        }
+      },
       Command::QuadraticBezierSmoothAbsolute => { },
       Command::QuadraticBezierSmoothRelative => { },
       Command::CubicBezierAbsolute => {
@@ -202,8 +299,12 @@ impl PathState {
       Command::CubicBezierSmoothRelative => { },
       Command::EllipticalArcAbsolute => { },
       Command::EllipticalArcRelative => { },
-      Command::StopAbsolute => { /* Used to stop path processing. */ },
-      Command::StopRelative => { /* Used to stop path processing. */ },
+      Command::StopAbsolute => {
+        println!("], polygon << concat [ // StopAbsolute");
+      },
+      Command::StopRelative=> {
+        println!("], polygon << concat [ // StopRelative");
+      },
     }
   }
 }
@@ -234,7 +335,7 @@ fn main() {
   println!("let");
   println!("{}", extra_curv);
   println!("in");
-  println!("polygon << concat [");
+  println!("union [nothing, ");
   
   for e in parser {
     match e {
@@ -279,6 +380,7 @@ fn main() {
             },
 
             "path" => {
+              println!("polygon << concat [");
               for attr in attributes {
                 match attr.name.local_name.as_str() {
                   "d" => {
@@ -327,9 +429,7 @@ fn main() {
 
                       match state.command {
                         Command::StopAbsolute | Command::StopRelative => {
-                          // Do not continue looping through the path string.
-                          // println!("Stop");
-                          break;
+                          state.push_value();
                         },
                         _ => {}
                       }
@@ -348,6 +448,7 @@ fn main() {
                   _ => {}
                 }
               }
+              println!("],");
             },
             _ => {}
           }

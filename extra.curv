@@ -4,7 +4,7 @@ bezier3 points step = let
 in
 [for (t in steps_l)
   (       ((1 - t) ^ 2)           * points.[0])
-  +  (2 * ((1 - t) ^ 1)           * points.[1])
+  +  (2 * ((1 - t) ^ 1) * (t ^ 1) * points.[1])
   +  (                    (t ^ 2) * points.[2])
 ];
 
