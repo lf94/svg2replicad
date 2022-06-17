@@ -129,7 +129,7 @@ impl PathState {
           self.current_point.y = args[1];
           
           println!(
-            "  [[{}, {}]], // MoveAbsolute",
+            ".movePointerTo([{}, {}]) // MoveAbsolute",
             self.current_point.x,
             -self.current_point.y,
           );
@@ -141,7 +141,7 @@ impl PathState {
           self.current_point.y += args[1];
           
           println!(
-            "  [[{}, {}]], // MoveRelative",
+            ".movePointerTo([{}, {}]) // MoveRelative",
             self.current_point.x,
             -self.current_point.y,
           );
@@ -153,7 +153,7 @@ impl PathState {
           self.current_point.y = args[1];
           
           println!(
-            "  [[{}, {}]], // LineAbsolute",
+            ".lineTo({}, {}) // LineAbsolute",
             self.current_point.x,
             -self.current_point.y,
           );
@@ -165,7 +165,7 @@ impl PathState {
           self.current_point.y += args[1];
           
           println!(
-            "  [[{}, {}]], // LineRelative",
+            ".line({}, {}) // LineRelative",
             self.current_point.x,
             -self.current_point.y,
           );
@@ -176,9 +176,8 @@ impl PathState {
           self.current_point.x = args[0];
           
           println!(
-            "  [[{}, {}]], // HorizontalLineAbsolute",
-            self.current_point.x,
-            -self.current_point.y,
+            ".hLineTo({}) // HorizontalLineAbsolute",
+            self.current_point.x
           );
         }
       },
@@ -187,9 +186,8 @@ impl PathState {
           self.current_point.x += args[0];
           
           println!(
-            "  [[{}, {}]], // HorizontalLineRelative",
-            self.current_point.x,
-            -self.current_point.y,
+            ".hLine({}) // HorizontalLineRelative",
+            self.current_point.x
           );
         }
       },
@@ -198,9 +196,8 @@ impl PathState {
           self.current_point.y = args[0];
           
           println!(
-            "  [[{}, {}]], // VerticalLineAbsolute",
-            self.current_point.x,
-            -self.current_point.y,
+            ".vLineTo({}) // VerticalLineAbsolute",
+            -self.current_point.y
           );
         }
       },
@@ -209,22 +206,19 @@ impl PathState {
           self.current_point.y += args[0];
           
           println!(
-            "  [[{}, {}]], // VerticalLineRelative",
-            self.current_point.x,
-            -self.current_point.y,
+            ".vLine({}) // VerticalLineRelative",
+            -self.current_point.y
           );
         }
       },
       Command::QuadraticBezierAbsolute => {
         for args in self.values.chunks(4) {
           println!(
-            "  bezier3 [[{}, {}], [{}, {}], [{}, {}]] 0.2, // QuadraticBezierAbsolute",
-            self.current_point.x,
-            -self.current_point.y,
-            args[0],
-            -args[1],
+            ".quadraticBezierCurveTo([{}, {}], [{}, {}]), // QuadraticBezierAbsolute",
             args[2],
             -args[3],
+            args[0],
+            -args[1],
           );
 
           self.current_point.x = args[2];
@@ -239,13 +233,11 @@ impl PathState {
           }
           
           println!(
-            "  bezier3 [[{}, {}], [{}, {}], [{}, {}]] 0.2, // QuadraticBezierRelative",
-            self.current_point.x,
-            -self.current_point.y,
-            self.current_point.x + args[0],
-            -(self.current_point.y + args[1]),
+            ".quadraticBezierCurveTo([{}, {}], [{}, {}]), // QuadraticBezierRelative",
             self.current_point.x + args[2],
             -(self.current_point.y + args[3]),
+            self.current_point.x + args[0],
+            -(self.current_point.y + args[1]),
           );
 
           self.current_point.x += args[2];
@@ -257,15 +249,13 @@ impl PathState {
       Command::CubicBezierAbsolute => {
         for args in self.values.chunks(6) {
           println!(
-            "  bezier4 [[{}, {}], [{}, {}], [{}, {}], [{}, {}]] 0.2, // CubicBezierAbsolute",
-            self.current_point.x,
-            -self.current_point.y,
+            ".cubicBezierCurveTo([{}, {}], [{}, {}], [{}, {}]) // CubicBezierAbsolute",
+            args[4],
+            -args[5],
             args[0],
             -args[1],
             args[2],
             -args[3],
-            args[4],
-            -args[5],
           );
 
           self.current_point.x = args[4];
@@ -280,15 +270,13 @@ impl PathState {
           }
           
           println!(
-            "  bezier4 [[{}, {}], [{}, {}], [{}, {}], [{}, {}]] 0.2, // CubicBezierRelative",
-            self.current_point.x,
-            -self.current_point.y,
+            ".cubicBezierCurveTo([{}, {}], [{}, {}], [{}, {}]) // CubicBezierRelative",
+            self.current_point.x + args[4],
+            -(self.current_point.y + args[5]),
             self.current_point.x + args[0],
             -(self.current_point.y + args[1]),
             self.current_point.x + args[2],
             -(self.current_point.y + args[3]),
-            self.current_point.x + args[4],
-            -(self.current_point.y + args[5]),
           );
 
           self.current_point.x += args[4];
@@ -300,10 +288,10 @@ impl PathState {
       Command::EllipticalArcAbsolute => { },
       Command::EllipticalArcRelative => { },
       Command::StopAbsolute => {
-        println!("], polygon << concat [ // StopAbsolute");
+        println!(" // StopAbsolute");
       },
       Command::StopRelative=> {
-        println!("], polygon << concat [ // StopRelative");
+        println!(" // StopRelative");
       },
     }
   }
@@ -325,17 +313,14 @@ impl Default for PathState {
 }
 
 fn main() {
-  let extra_curv = fs::read_to_string("extra.curv").unwrap();
+  let extra_curv = fs::read_to_string("extra.rcad").unwrap();
 
   let args: Vec<String> = env::args().collect();
   let drawing_svg = File::open(args[1].clone()).unwrap();
   let drawing_svg = BufReader::new(drawing_svg);
   let parser = EventReader::new(drawing_svg);
 
-  println!("let");
-  println!("{}", extra_curv);
-  println!("in");
-  println!("union [nothing, ");
+  println!("const svg = draw()");
   
   for e in parser {
     match e {
@@ -352,7 +337,7 @@ fn main() {
                 }
               }
               println!(
-                "circle {} >> move [{}, {}, 0],",
+                ".fuse(drawCircle({}).translate({}, {}))",
                 circle.radius,
                 circle.position.x,
                 -circle.position.y,
@@ -371,7 +356,7 @@ fn main() {
                 }
               }
               println!(
-                "ellipse [ {}, {} ] >> move [{}, {}, 0],",
+                ".fuse(drawEllipse({}, {}).translate({}, {}))",
                 ellipse.radius_x,
                 ellipse.radius_y,
                 ellipse.position.x,
@@ -380,7 +365,7 @@ fn main() {
             },
 
             "path" => {
-              println!("polygon << concat [");
+              println!(".fuse(draw()");
               for attr in attributes {
                 match attr.name.local_name.as_str() {
                   "d" => {
@@ -448,7 +433,7 @@ fn main() {
                   _ => {}
                 }
               }
-              println!("],");
+              println!(")");
             },
             _ => {}
           }
@@ -463,5 +448,5 @@ fn main() {
     }
   }
   
-  println!("]");
+  println!(".done().sketchOnPlane(new Plane('XY'));");
 }
