@@ -1,7 +1,7 @@
-# svg2curv
-Translate svg drawings to curv code.
+# svg2replicad
+Translate svg drawings to replicad code.
 
-![Rendering of Curv](./images/curv.png)
+![Rendering of RepliCAD](./images/out.png)
 
 The main use-case I had in mind when creating this was for adding logos or
 designs to my curv models. It's also great for tracing out gears or other
@@ -9,11 +9,7 @@ measurement sensitive models and being extruded.
 
 ## Usage
 
-Simply run `cargo run [drawing.svg]` and copy the output to your curv program.
-
-You may decide that the output is good enough and automate this process by 
-redirecting the output to a file and then using
-`include file "output_from_svg2curv.curv";` in your curv source code.
+Simply run `cargo run [drawing.svg]` and copy the output to your replicad program.
 
 ## Refinement
 
